@@ -9,11 +9,7 @@
 
 ## 📋 About
 
-QuranStream is a professional live audio streaming platform designed to stream Quranic radio stations to RTMP platforms like Telegram, Facebook Live, YouTube Live, and more. The platform features zero-downtime channel switching, allowing you to seamlessly switch between 126 pre-configured radio stations without interrupting your live stream.
-
-### Topics
-
-`python` `fastapi` `ffmpeg` `streaming` `rtmp` `live-streaming` `audio-streaming` `quran` `radio` `telegram` `docker` `web-application` `rest-api` `audio-processing` `multimedia` `real-time` `streaming-platform` `islamic-content` `live-audio` `web-interface`
+Live audio streaming to Telegram via RTMP - بث مباشر للراديو القرآني إلى Telegram
 
 ## ✨ Features
 
