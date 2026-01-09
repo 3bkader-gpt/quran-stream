@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuranStream Local Controller</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <div class="max-w-6xl mx-auto p-4">
+    <header class="mb-6">
+      <h1 class="text-2xl font-bold">QuranStream Local Controller</h1>
+      <p class="text-sm text-gray-600">Manage a 24/7 audio stream to Telegram via RTMP.</p>
+    </header>
+
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div class="md:col-span-2 bg-white shadow-sm border rounded p-4">
+        <h2 class="font-semibold mb-3">RTMP Settings</h2>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium mb-1" for="rtmpServer">RTMP Server URL</label>
+            <input id="rtmpServer" type="text" class="w-full border rounded px-3 py-2" placeholder="rtmp://your_server/app" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1" for="streamKey">Stream Key</label>
+            <input id="streamKey" type="text" class="w-full border rounded px-3 py-2" placeholder="your_stream_key" />
+          </div>
+          <div class="flex gap-2">
+            <button id="saveSettings" class="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
+            <button id="clearSettings" class="px-3 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Clear</button>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white shadow-sm border rounded p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-semibold">Status</h2>
+          <button id="stopBtn" class="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700">Stop</button>
+        </div>
+        <div id="statusIndicator" class="text-sm">
+          <span class="text-gray-700">⚫ Offline</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-white shadow-sm border rounded p-4">
+      <div class="flex items-center gap-3 mb-4">
+        <input id="searchInput" type="text" class="flex-1 border rounded px-3 py-2" placeholder="Search readers..." />
+        <button id="refreshStations" class="px-3 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Refresh</button>
+      </div>
+      <div id="stationsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+    </section>
+  </div>
+
+  <script>
+    const rtmpServerEl = document.getElementById('rtmpServer');
+    const streamKeyEl = document.getElementById('streamKey');
+    const saveSettingsEl = document.getElementById('saveSettings');
+    const clearSettingsEl = document.getElementById('clearSettings');
+    const statusIndicatorEl = document.getElementById('statusIndicator');
+    const stopBtnEl = document.getElementById('stopBtn');
+    const searchInputEl = document.getElementById('searchInput');
+    const refreshStationsEl = document.getElementById('refreshStations');
+    const stationsGridEl = document.getElementById('stationsGrid');
+
+    function loadSettings() {
+      const server = localStorage.getItem('rtmpServer') || '';
+      const key = localStorage.getItem('streamKey') || '';
+      rtmpServerEl.value = server;
+      streamKeyEl.value = key;
+    }
+
+    function saveSettings() {
+      const server = rtmpServerEl.value.trim();
+      const key = streamKeyEl.value.trim();
+      if (!server || !key) {
+        alert('⚠️ Please enter both RTMP Server URL and Stream Key');
+        return;
+      }
+      localStorage.setItem('rtmpServer', server);
+      localStorage.setItem('streamKey', key);
+      alert('✅ Settings saved successfully!');
+    }
+
+    function clearSettings() {
+      localStorage.removeItem('rtmpServer');
+      localStorage.removeItem('streamKey');
+      rtmpServerEl.value = '';
+      streamKeyEl.value = '';
+    }
+
+    saveSettingsEl.addEventListener('click', saveSettings);
+    clearSettingsEl.addEventListener('click', clearSettings);
+
+    async function fetchStations() {
+      try {
+        const res = await fetch('/api/stations');
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+      } catch (e) {
+        console.error('Failed to fetch stations', e);
+        return [];
+      }
+    }
+
+    function renderStations(stations) {
+      stationsGridEl.innerHTML = '';
+      const query = searchInputEl.value.trim().toLowerCase();
+      const filtered = stations.filter(s =>
+        s.name.toLowerCase().includes(query) || s.url.toLowerCase().includes(query)
+      );
+
+      for (const s of filtered) {
+        const card = document.createElement('div');
+        card.className = 'border rounded p-3 flex flex-col gap-2';
+        const title = document.createElement('div');
+        title.className = 'font-semibold';
+        title.textContent = s.name;
+        const url = document.createElement('div');
+        url.className = 'text-xs text-gray-500 break-all';
+        url.textContent = s.url;
+        const playBtn = document.createElement('button');
+        playBtn.className = 'px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700';
+        playBtn.textContent = 'Play';
+        playBtn.addEventListener('click', async () => {
+          const rtmpServer = rtmpServerEl.value.trim();
+          const key = streamKeyEl.value.trim();
+          console.log('🎵 Play button clicked for:', s.name);
+          console.log('📡 Stream URL:', s.url);
+          console.log('🔑 RTMP Server:', rtmpServer);
+          console.log('🔑 Stream Key:', key.substring(0, 10) + '...');
+          
+          if (!rtmpServer || !key) {
+            console.error('❌ Missing RTMP credentials');
+            alert('Please enter RTMP Server and Stream Key, then Save.');
+            return;
+          }
+          
+          playBtn.disabled = true;
+          playBtn.textContent = 'Starting...';
+          
+          try {
+            console.log('📤 Sending start request...');
+            const res = await fetch('/api/start', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url: s.url, rtmp_server: rtmpServer, key })
+            });
+            const data = await res.json();
+            console.log('📥 Response:', data);
+            
+            if (res.ok) {
+              console.log('✅ Stream started successfully');
+              updateStatus();
+              alert('✅ Stream started: ' + s.name);
+            } else {
+              console.error('❌ Error:', data.error);
+              alert('❌ Error: ' + (data.error || 'Failed to start stream'));
+            }
+          } catch (e) {
+            console.error('❌ Network error:', e);
+            alert('❌ Failed to start stream: ' + e.message);
+          } finally {
+            playBtn.disabled = false;
+            playBtn.textContent = 'Play';
+          }
+        });
+        card.appendChild(title);
+        card.appendChild(url);
+        card.appendChild(playBtn);
+        stationsGridEl.appendChild(card);
+      }
+    }
+
+    async function updateStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const status = await res.json();
+        if (status.running) {
+          statusIndicatorEl.innerHTML = `<span class="text-red-600">🔴 Live${status.name ? ': ' + status.name : ''}</span>`;
+        } else {
+          statusIndicatorEl.innerHTML = '<span class="text-gray-700">⚫ Offline</span>';
+        }
+      } catch (e) {
+        statusIndicatorEl.innerHTML = '<span class="text-gray-700">⚫ Offline</span>';
+      }
+    }
+
+    stopBtnEl.addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/stop', { method: 'POST' });
+        await res.json();
+      } catch (e) {}
+      updateStatus();
+    });
+
+    searchInputEl.addEventListener('input', async () => {
+      const stations = await fetchStations();
+      renderStations(stations);
+    });
+
+    refreshStationsEl.addEventListener('click', async () => {
+      const stations = await fetchStations();
+      renderStations(stations);
+    });
+
+    // Init
+    loadSettings();
+    (async () => {
+      const stations = await fetchStations();
+      renderStations(stations);
+      updateStatus();
+      setInterval(updateStatus, 5000);
+    })();
+  </script>
+</body>
+</html>
