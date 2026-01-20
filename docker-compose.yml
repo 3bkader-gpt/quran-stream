@@ -1,0 +1,9 @@
+services:
+  quran-stream:
+    build: .
+    environment:
+      - PORT=8000
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
