@@ -2,266 +2,123 @@
 
 # 📻 Quran Stream
 
-### Live Audio Streaming to Telegram via RTMP
+### Live Quran Radio Streaming to Telegram via RTMP
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-Latest-009688.svg)](https://fastapi.tiangolo.com/)
-[![FFmpeg](https://img.shields.io/badge/FFmpeg-Required-orange.svg)](https://ffmpeg.org/)
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
+[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688.svg)](https://fastapi.tiangolo.com/)
+[![FFmpeg](https://img.shields.io/badge/FFmpeg-Audio%20Pipeline-007808.svg)](https://ffmpeg.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg)](https://www.docker.com/)
 
-**Live Audio Streaming • Telegram Integration • Advanced Audio Processing**
+**Local Web Controller • RTMP Output • Multiple Quran Radio Stations**
 
-[Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Contributing](#-contributing)
-
-[العربية](README-ar.md) | [English](#-quran-stream)
+[Features](#-features) • [Architecture](#-architecture) • [Docker Deployment](#-docker-deployment) • [Local Run](#-local-run)
 
 </div>
-
----
-
-## 📋 Table of Contents
-
-- [Overview](#-overview)
-- [Features](#-features)
-- [Requirements](#-requirements)
-- [Installation](#-installation)
-- [Configuration](#-configuration)
-- [Usage](#-usage)
-- [Project Structure](#-project-structure)
-- [Technologies Used](#-technologies-used)
-- [Contributing](#-contributing)
 
 ---
 
 ## 🎯 Overview
 
-**Quran Stream** is a live audio streaming system to Telegram via RTMP. It allows you to stream Quranic radio directly to your Telegram channels easily and simply.
+Quran Stream is a **local controller** for streaming Quran radio to Telegram (or any RTMP destination).
 
-### ✨ Why Quran Stream?
+It:
 
-- 📡 **High-Quality Live Streaming** - Clear and stable audio streaming
-- 🔗 **Seamless Telegram Integration** - Easy streaming to your channels
-- 🎵 **Advanced Audio Processing** - Using FFmpeg for audio processing and conversion
-- 🌐 **Simple Web Interface** - Full control from your browser
+- Reads a list of radio streams from `mp3quran_radios.m3u`
+- Lets you select a station from a web UI
+- Streams the selected station via FFmpeg pipeline to your RTMP server/key
+- Provides a simple FastAPI-based control panel
 
 ---
 
 ## 🌟 Features
 
-### 🚀 Main Features
-
-| Feature | Description |
-|---------|-------------|
-| 📡 **Live Streaming** | Live audio streaming of Quranic radio |
-| 🔗 **Telegram Integration** | Live streaming to Telegram channels via RTMP |
-| 🎵 **Audio Processing** | Using FFmpeg for audio processing and conversion |
-| 🌐 **Web Interface** | Simple web interface for stream control |
-| 🐳 **Docker Support** | Easy deployment using Docker |
-| ⚡ **High Performance** | FastAPI for ultra-fast speed |
-
-### 📻 Supported Stations
-
-- mp3quran.net stations
-- Other Islamic radio stations
-- Custom station support
+- 📡 **Live audio streaming** from Quran radio sources
+- 🔗 **RTMP output** compatible with Telegram and other RTMP consumers
+- 🌐 **Web UI** to manage station selection and stream status
+- 🧰 **FFmpeg-based pipeline** for robust audio handling
+- 🐳 **Docker support** for easy deployment (single service)
 
 ---
 
-## 📦 Requirements
+## 🏗 Architecture
 
-Before starting, make sure you have installed:
+- `main.py` – FastAPI app + embedded HTTP streaming server + FFmpeg management
+- `templates/` – Jinja2 templates for the control panel
+- `mp3quran_radios.m3u` – list of radio stream URLs
+- `Dockerfile` – container image including FFmpeg and app
+- `docker-compose.yml` – one-service Compose file for easier deployment
 
-- **Python** 3.8 or higher
-- **FFmpeg** (required for audio processing)
-- **Telegram** account
-- **Docker** (optional for deployment)
+---
 
-### Installing FFmpeg
+## 🐳 Docker Deployment
+
+### Prerequisites
+
+- Docker
+- Docker Compose plugin (`docker compose`)
+
+### Quick Start
 
 ```bash
-# Ubuntu/Debian
-sudo apt-get update
-sudo apt-get install ffmpeg
+git clone https://github.com/3bkader-gpt/quran-stream.git
+cd quran-stream
 
-# macOS
-brew install ffmpeg
+# Build image and run container
+docker compose up -d --build
+```
 
-# Windows
-# Download FFmpeg from https://ffmpeg.org/download.html
+This will:
+
+- Build image from `Dockerfile`
+- Start container on port **8000** (mapped to host `8000`)
+
+Now open in browser:
+
+```text
+http://<server-ip>:8000/
+```
+
+### Managing the container
+
+```bash
+# View status
+docker compose ps
+
+# Show logs
+docker compose logs -f
+
+# Stop & remove container
+docker compose down
 ```
 
 ---
 
-## 🚀 Installation
+## 💻 Local Run (without Docker)
 
-### Method 1: Standard Installation
+### Install dependencies
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/3bkader-gpt/quran-stream.git
-cd quran-stream
-
-# 2. Create a virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# 3. Install requirements
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-
-# 4. Run the application
-python main.py
 ```
 
-### Method 2: Using Docker
+### Run the app
 
 ```bash
-# Clone the repository
-git clone https://github.com/3bkader-gpt/quran-stream.git
-cd quran-stream
-
-# Build the image
-docker build -t quran-stream .
-
-# Run the container
-docker run -p 8000:8000 quran-stream
+uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
----
+Open:
 
-## ⚙️ Configuration
-
-### Telegram RTMP Setup
-
-1. Create a Telegram channel
-2. Get RTMP URL from Telegram
-3. Add the URL in settings
-
-### Customizing Stations
-
-Edit `mp3quran_radios.m3u` to add or modify radio stations:
-
-```m3u
-#EXTM3U
-#EXTINF:-1,Quranic Radio
-http://stream.example.com/radio.mp3
+```text
+http://127.0.0.1:8000/
 ```
 
----
-
-## 📖 Usage
-
-### Streaming Steps
-
-1. ✅ **Run the Application**
-   ```bash
-   python main.py
-   ```
-
-2. ✅ **Open Browser**
-   ```
-   http://localhost:8000
-   ```
-
-3. ✅ **Select Station**
-   - Choose radio station from the list
-   - Click the stream button
-
-4. ✅ **Start Streaming**
-   - Streaming will automatically start to Telegram
-   - Monitor stream status from the interface
-
-### User Interface
-
-- 📊 **Dashboard** - View current stream status
-- 🎛️ **Control** - Start/stop streaming
-- 📡 **Stations** - List of available stations
-- 📈 **Statistics** - Streaming statistics
-
----
-
-## 📁 Project Structure
-
-```
-quran-stream/
-├── 📂 templates/              # HTML templates
-│   └── index.html            # Main page
-├── 📄 main.py                # Main code
-├── 📄 mp3quran_radios.m3u    # Radio stations list
-├── 📄 requirements.txt       # Requirements
-├── 🐳 Dockerfile             # Docker file
-└── 📄 Procfile              # Deployment file
-```
-
----
-
-## 🛠️ Technologies Used
-
-<div align="center">
-
-| Technology | Description |
-|------------|-------------|
-| ![Python](https://img.shields.io/badge/Python-3.8+-3776AB?logo=python&logoColor=white) | Main programming language |
-| ![FastAPI](https://img.shields.io/badge/FastAPI-Latest-009688?logo=fastapi&logoColor=white) | Web framework |
-| ![FFmpeg](https://img.shields.io/badge/FFmpeg-Required-007808?logo=ffmpeg&logoColor=white) | Audio/video processing |
-| ![RTMP](https://img.shields.io/badge/RTMP-Protocol-FF6B6B?logo=rtmp&logoColor=white) | Live streaming protocol |
-| ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white) | Containers |
-
-</div>
-
----
-
-## 🚀 Deployment
-
-### Render.com
-
-The project is ready for deployment on Render.com. See `render.yaml` for settings.
-
-### Heroku
-
-Use the existing `Procfile` for Heroku deployment.
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! 🎉
-
-1. 🍴 Fork the project
-2. 🌿 Create a branch (`git checkout -b feature/AmazingFeature`)
-3. 💾 Commit (`git commit -m 'Add some AmazingFeature'`)
-4. 📤 Push (`git push origin feature/AmazingFeature`)
-5. 🔄 Open a Pull Request
-
----
-
-## ⚠️ Important Notes
-
-- ⚖️ Make sure you have proper permission to use Quranic radio content
-- 🔒 Protect your connection information
-- 📊 Monitor bandwidth usage
+Make sure **FFmpeg** is installed on the host (the Docker image already includes FFmpeg).
 
 ---
 
 ## 📄 License
 
-This project is open source and available for free use.
-
----
-
-## 📞 Contact & Support
-
-- 🐛 **Report Issues**: [Open an Issue](https://github.com/3bkader-gpt/quran-stream/issues)
-- 💡 **Suggest Features**: [Open an Issue](https://github.com/3bkader-gpt/quran-stream/issues)
-- 📧 **Email**: medo.omar.salama@gmail.com
-
----
-
-<div align="center">
-
-**Made with ❤️ by [Mohamed Omar](https://github.com/3bkader-gpt)**
-
-⭐ If you like this project, don't forget to give it a star!
-
-[⬆ Back to Top](#-quran-stream)
-
-</div>
+This project is open-source under the MIT License.
